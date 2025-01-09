@@ -121,35 +121,35 @@ Module Module1
     ''' <param name="apiKey">Ключ для доступа к API.</param>
     ''' <param name="satelliteId">ID КА по классификации NORAD.</param>
     Private Function GetResponseWithTleData(apiAddr As String, apiKey As String, satelliteId As String) As String
+        
+        Dim apiUrl As String = $"{apiAddr}tle/{satelliteId}"
+        If (apiKey.Length > 0) Then
+            apiUrl &= $"&apiKey={apiKey}"
+        End If
+        Debug.WriteLine("API: " & apiUrl)
+
+        ServicePointManager.Expect100Continue = True
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 Or SecurityProtocolType.Ssl3 Or SecurityProtocolType.Tls Or SecurityProtocolType.Tls11
+        ServicePointManager.ServerCertificateValidationCallback = Function() True
+
+        Dim req As HttpWebRequest = CType(HttpWebRequest.Create(apiUrl), HttpWebRequest)
+        req.Method = WebRequestMethods.Http.Get
+        req.ProtocolVersion = HttpVersion.Version11
+        req.Accept = "application/json"
+        req.AllowAutoRedirect = True
+        req.KeepAlive = True
+        req.Timeout = 5000
+
+        'Получаем HTTP-ответ:
+        Dim webResp As WebResponse = req.GetResponse()
         Dim resp As String = ""
+        Using httpStm As New StreamReader(webResp.GetResponseStream())
+            resp = httpStm.ReadToEnd().Trim()
+        End Using
+
         SyncLock ConsoleLock
             Console.ForegroundColor = ConsoleColor.Yellow
             Console.WriteLine($"Request TLE for {satelliteId}...")
-
-            Dim apiUrl As String = $"{apiAddr}tle/{satelliteId}"
-            If (apiKey.Length > 0) Then
-                apiUrl &= $"&apiKey={apiKey}"
-            End If
-            Debug.WriteLine("API: " & apiUrl)
-
-            ServicePointManager.Expect100Continue = True
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 Or SecurityProtocolType.Ssl3 Or SecurityProtocolType.Tls Or SecurityProtocolType.Tls11
-            ServicePointManager.ServerCertificateValidationCallback = Function() True
-
-            Dim req As HttpWebRequest = CType(HttpWebRequest.Create(apiUrl), HttpWebRequest)
-            req.Method = WebRequestMethods.Http.Get
-            req.ProtocolVersion = HttpVersion.Version11
-            req.Accept = "application/json"
-            req.AllowAutoRedirect = True
-            req.KeepAlive = True
-            req.Timeout = 5000
-
-            'Получаем HTTP-ответ:
-            Dim webResp As WebResponse = req.GetResponse()
-            Using httpStm As New StreamReader(webResp.GetResponseStream())
-                resp = httpStm.ReadToEnd().Trim()
-            End Using
-
             Console.ForegroundColor = ConsoleColor.Gray
             Console.WriteLine(resp)
             Console.WriteLine()
