@@ -107,12 +107,6 @@ Module Module1
     ''' {"info":
     '''     {"satid":44453,"satname":"MERIDIAN 8","transactionscount":0},
     '''     "tle":"1 44453U 19046A   20082.44006892  .00000022  00000-0  00000+0 0  9998\r\n2 44453  62.7307 313.4060 7170897 271.6132 197.9595  2.00611004  4738"}
-    ''' Формат TLE такой:
-    ''' MERIDIAN 1
-    ''' 1 29668U 06061A   19217.39432342 -.00000011  00000-0 -10700-5 0  9991
-    ''' 2 29668  63.1672 341.6847 7482018 233.7931  32.6691  2.00639148 92392
-    ''' </remarks>
-    ''' <param name="responseLine"></param>
     Private Function ParseResponse(responseLine As String) As String
         Try
             Dim satNameRegex As New Regex("(?i)""satname"":""(?<name>[a-z \-\d\(\)_]+)")
@@ -207,16 +201,11 @@ Module Module1
                 sw.WriteLine("https://api.n2yo.com/rest/v1/satellite/") 'добавляет web-адрес для обращения к API 'IP=158.69.117.9
                 sw.WriteLine("NQNYAH-JKSXC9-GRBAMJ-4BXK") 'добавляет ключ API
                 'добавляет ID:
-#If SOL Then
                 sw.WriteLine("25544") 'МКС
                 sw.WriteLine("11251") 'Метеор
                 sw.WriteLine("47719") 'Арктика-М 1
                 sw.WriteLine("33591") 'NORAD-19
                 sw.WriteLine("29155") 'GOES-13
-#Else
-                sw.WriteLine("44453") 'Меридиан 8
-                sw.WriteLine("40296") 'Меридиан 7
-#End If
             End Using
 
 #If RU Then
