@@ -4,14 +4,29 @@ Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.Threading.Tasks
 
+#Const RU = False
+
 Module Module1
 
     Private Const ConfigFileName As String = "tle_config.txt"
 
     Sub Main()
+#If DEBUG Then
+        ''Dim res As String = "{""info"":{""satid"":44453,""satname"":""MERIDIAN 8"",""transactionscount"":0},""tle"":""1 44453U 19046A   20082.44006892  .00000022  00000-0  00000+0 0  9998\r\n2 44453  62.7307 313.4060 7170897 271.6132 197.9595  2.00611004  4738""}"
+        'Dim res As String = "{""info"":{""satid"":47719,""satname"":""ARKTIKA-M 1"",""transactionscount"":2},""tle"":""1 47719U 21016A   23247.62710293  .00000127  00000-0  00000-0 0  9996\r\n2 47719  63.1483 183.8473 6888953 269.5248  18.0620  2.00592599 18391""}"
+        'Dim r As String = ParseResponse(res)
+        'Debug.WriteLine(r)
+        'Return
+#End If
+
         Console.ForegroundColor = ConsoleColor.Cyan
+#If RU Then
+        Console.WriteLine("ПРОГРАММА ЗАПРАШИВАЕТ TLE ДЛЯ ЗАДАННЫХ КА И СОХРАНЯЕТ В ФАЙЛЕ" & vbNewLine) 
+        System.Threading.Thread.CurrentThread.CurrentUICulture = New Globalization.CultureInfo("ru-RU")
+#Else
         Console.WriteLine("THE APPLICATION REQUESTS TLE FOR GIVEN SATELLITES AND SAVES IT TO THE FILE" & vbNewLine)
         System.Threading.Thread.CurrentThread.CurrentUICulture = New Globalization.CultureInfo("en-US")
+#End If
         Console.ForegroundColor = ConsoleColor.Gray
         Dim fn As String = GenerateTleFileName()
 
@@ -34,6 +49,12 @@ Module Module1
                 Loop
             End Using
 
+#If RU Then
+            Console.WriteLine($"Обнаружено {satIds.Count} ID КА." & vbNewLine)
+#Else
+            Console.WriteLine($"Found {satIds.Count} satellite IDs." & vbNewLine)
+#End If
+
             Parallel.ForEach(satIds, New Action(Of String)(
                              Sub(satId As String)
                                  Dim response As String = GetResponseWithTleData(apiAddr, apikey, satId)
@@ -48,7 +69,11 @@ Module Module1
             End Using
 
             Console.ForegroundColor = ConsoleColor.DarkCyan
+#If RU Then
+            Console.WriteLine($"Результаты сохранены в файле [ {fn} ].")
+#Else
             Console.WriteLine($"Result saves to [ {fn} ].")
+#End If
             Console.ForegroundColor = ConsoleColor.Gray
 
         Catch ex As Exception
@@ -65,7 +90,11 @@ Module Module1
             End Try
 
             Console.ForegroundColor = ConsoleColor.Gray
+#If RU Then
+            Console.WriteLine("Нажмите любую клавишу...")
+#Else
             Console.WriteLine("Press any key...".Insert(0, vbNewLine))
+#End If
             Console.ReadKey()
         End Try
     End Sub
@@ -78,6 +107,10 @@ Module Module1
     ''' {"info":
     '''     {"satid":44453,"satname":"MERIDIAN 8","transactionscount":0},
     '''     "tle":"1 44453U 19046A   20082.44006892  .00000022  00000-0  00000+0 0  9998\r\n2 44453  62.7307 313.4060 7170897 271.6132 197.9595  2.00611004  4738"}
+    ''' Формат TLE такой:
+    ''' MERIDIAN 1
+    ''' 1 29668U 06061A   19217.39432342 -.00000011  00000-0 -10700-5 0  9991
+    ''' 2 29668  63.1672 341.6847 7482018 233.7931  32.6691  2.00639148 92392
     ''' </remarks>
     ''' <param name="responseLine"></param>
     Private Function ParseResponse(responseLine As String) As String
@@ -109,7 +142,7 @@ Module Module1
     ''' Генерирует имя файла по текущей дате.
     ''' </summary>
     Private Function GenerateTleFileName() As String
-        Return $"{Now:yyyy-MM-dd HH-mm}.tle"
+        Return $"{Now:yyyy-MM-dd HH-mm-ss}.tle"
     End Function
 
     Private ReadOnly ConsoleLock As New Object()
@@ -121,7 +154,7 @@ Module Module1
     ''' <param name="apiKey">Ключ для доступа к API.</param>
     ''' <param name="satelliteId">ID КА по классификации NORAD.</param>
     Private Function GetResponseWithTleData(apiAddr As String, apiKey As String, satelliteId As String) As String
-        
+
         Dim apiUrl As String = $"{apiAddr}tle/{satelliteId}"
         If (apiKey.Length > 0) Then
             apiUrl &= $"&apiKey={apiKey}"
@@ -142,6 +175,7 @@ Module Module1
 
         'Получаем HTTP-ответ:
         Dim webResp As WebResponse = req.GetResponse()
+
         Dim resp As String = ""
         Using httpStm As New StreamReader(webResp.GetResponseStream())
             resp = httpStm.ReadToEnd().Trim()
@@ -149,7 +183,11 @@ Module Module1
 
         SyncLock ConsoleLock
             Console.ForegroundColor = ConsoleColor.Yellow
+#If RU Then
+            Console.WriteLine($"Запрос TLE для {satelliteId}...")
+#Else
             Console.WriteLine($"Request TLE for {satelliteId}...")
+#End If
             Console.ForegroundColor = ConsoleColor.Gray
             Console.WriteLine(resp)
             Console.WriteLine()
@@ -169,14 +207,29 @@ Module Module1
                 sw.WriteLine("https://api.n2yo.com/rest/v1/satellite/") 'добавляет web-адрес для обращения к API 'IP=158.69.117.9
                 sw.WriteLine("NQNYAH-JKSXC9-GRBAMJ-4BXK") 'добавляет ключ API
                 'добавляет ID:
+#If SOL Then
                 sw.WriteLine("25544") 'МКС
+                sw.WriteLine("11251") 'Метеор
+                sw.WriteLine("47719") 'Арктика-М 1
                 sw.WriteLine("33591") 'NORAD-19
                 sw.WriteLine("29155") 'GOES-13
+#Else
+                sw.WriteLine("44453") 'Меридиан 8
+                sw.WriteLine("40296") 'Меридиан 7
+#End If
             End Using
 
+#If RU Then
+            Console.WriteLine($"Создан конфигурационный файл [ {ConfigFileName} ]." & vbNewLine)
+#Else
             Console.WriteLine($"Configuration file [ {ConfigFileName} ] created." & vbNewLine)
+#End If
         Else
+#If RU Then
+            Console.WriteLine($"Обнаружен конфигурационный файл [ {ConfigFileName} ]." & vbNewLine)
+#Else
             Console.WriteLine($"Configuration file [ {ConfigFileName} ] found." & vbNewLine)
+#End If
         End If
     End Sub
 
